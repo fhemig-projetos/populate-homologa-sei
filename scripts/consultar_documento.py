@@ -4,7 +4,6 @@ import urllib3
 from dotenv import load_dotenv
 from zeep import Client, Settings, xsd
 from zeep.transports import Transport
-from utils import codificar_html_sei
 import base64
 
 # Carrega as variáveis do arquivo .env para a memória do script
