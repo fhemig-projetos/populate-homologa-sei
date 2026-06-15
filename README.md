@@ -1,91 +1,100 @@
-# Automação e Carga de Processos - SEI (API SOAP)
+# Populate Homologa Sei
 
-Script em Python desenvolvido para automatizar a criação de processos e geração de documentos no Sistema Eletrônico de Informações (SEI), utilizando a API nativa SOAP. 
-
-Este projeto foi desenhado primariamente para o ambiente de Homologação (ex: Prodemge), servindo para testes de carga, réplica de massa de dados e integração sistêmica.
-
-## Funcionalidades
-* Criação automatizada de Processos (Procedimentos) com classificação arquivística (Assuntos) e Interessados vinculados.
-* Geração nativa de documentos internos (ex: Ofícios, Despachos) atrelados ao processo via injeção HTML convertida em Base64.
-* Bypass automático de WAF (Web Application Firewall) em ambientes governamentais.
-* Estrutura blindada via `python-dotenv` para não expor credenciais no repositório.
+Repositório de testes e investigações da API SOAP do SEI (Sistema Eletrônico de Informações), voltado ao ambiente de homologação da FHEMIG/DIGEPE.
 
 ---
 
-## Tecnologias e Dependências
-* **Python 3.x**
-* [Zeep](https://docs.python-zeep.org/en/master/) (Cliente SOAP)
-* [Requests](https://requests.readthedocs.io/) (Manipulação de sessão e certificados)
-* [Python-dotenv](https://saurabh-kumar.com/python-dotenv/) (Gerenciamento de variáveis de ambiente)
+## Objetivo
+
+Explorar e documentar o comportamento dos endpoints da API SOAP do SEI v5.0, validando integrações antes de aplicá-las em automações de produção.
 
 ---
 
-## Instalação e Configuração
+## Pré-requisitos
 
-**1. Clone o repositório e acesse a pasta**
+- Python 3.10+
+- Acesso ao ambiente de homologação do SEI
+- Credenciais de sistema cadastradas no SEI (sigla, chave de acesso, ID de unidade)
+
+---
+
+## Instalação
+
 ```bash
-git clone [https://github.com/seu-usuario/populate-homologa-sei.git](https://github.com/seu-usuario/populate-homologa-sei.git)
+git clone <url-do-repositorio>
 cd populate-homologa-sei
-```
-
-**2. Crie e ative um Ambiente Virtual (Recomendado)**
-```bash
 python -m venv venv
-source venv/bin/activate  # No Linux/Mac
-# venv\Scripts\activate   # No Windows
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+pip install -r requirements.txt
 ```
 
-**3. Instale as dependências**
-```bash
-pip install zeep requests python-dotenv
-```
+---
 
-**4. Configuração do Cofre de Senhas (.env)**
-Crie um arquivo chamado `.env` na raiz do projeto (certifique-se de que ele não será comitado) utilizando o `.env.example` como base:
+## Configuração
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ```env
-SEI_WSDL_URL=[https://homologasei.prodemge.gov.br/sei/controlador_ws.php?servico=sei](https://homologasei.prodemge.gov.br/sei/controlador_ws.php?servico=sei)
-SEI_SIGLA_SISTEMA=ATDJ-DIGEPE
-SEI_CHAVE_ACESSO=sua_chave_secreta_aqui
-SEI_ID_UNIDADE=110001324
+SEI_WSDL_URL=https://<servidor>/sei/controlador_ws.php?servico=sei
+SEI_SIGLA_SISTEMA=<sigla-do-sistema>
+SEI_CHAVE_ACESSO=<chave-de-acesso>
+SEI_ID_UNIDADE=<id-da-unidade>
 ```
+
+> O arquivo `.env` não deve ser versionado. Certifique-se de que está no `.gitignore`.
 
 ---
 
-## Como Executar
+## Scripts Disponíveis
 
-Com o `.env` configurado e o ambiente virtual ativado, basta rodar:
-
-```bash
-python gerar_processo.py
-```
-
-O terminal retornará o Número de Protocolo visual, o ID interno no banco de dados e o Link público de acesso.
+| Script | Descrição |
+|---|---|
+| `gerar_processo.py` | Cria um novo processo no SEI com um documento de ofício gerado internamente |
+| `listar_series.py` | Lista os tipos de documento (séries) disponíveis para o serviço |
 
 ---
 
-## Notas de Engenharia (As Trincheiras do SOAP)
+## Documentação dos Endpoints
 
-A integração entre linguagens rigorosas como o Python (`zeep`) e sistemas legados como o SEI apresenta desafios de validação de WSDL. Este script utiliza alguns "hacks" arquiteturais fundamentais:
+A pasta [`docs/`](./docs/) contém a documentação detalhada de cada endpoint testado:
 
-### 1. Desligamento do Strict Mode
-A regra do WSDL do SEI e a documentação oficial divergem (o manual pede para mandar vazio, mas o WSDL dita `minOccurs="1"`). Para não ter a requisição bloqueada antes do envio, a validação rigorosa do Zeep foi desativada:
-```python
-settings = Settings(strict=False)
-```
+| Arquivo | Endpoint | Descrição |
+|---|---|---|
+| [gerar_procedimento.md](./docs/gerar_procedimento.md) | `gerarProcedimento` | Cria processo com documentos |
+| [consultar_procedimento.md](./docs/consultar_procedimento.md) | `consultarProcedimento` | Consulta dados de um processo |
+| [consultar_documento.md](./docs/consultar_documento.md) | `consultarDocumento` | Consulta dados de um documento |
+| [listar_series.md](./docs/listar_series.md) | `listarSeries` | Lista tipos de documento disponíveis |
 
-### 2. A Estrutura de Arrays (`{'items': []}`)
-Sempre que for mapear uma lista do SEI (como `Assuntos`, `Interessados` ou `Documentos`), é obrigatório utilizar a sintaxe interna de desempacotamento do Zeep (`ArrayValue`), envelopando os dicionários na chave `'items'`:
-```python
-'Assuntos': {
-    'items': [
-        {'CodigoEstruturado': '021.1'}
-    ]
-}
-```
+---
 
-### 3. A Bala de Prata do `xsd.Nil`
-Não mande listas vazias (`[]`) ou strings vazias (`""`) em campos do tipo Array do SEI que você deseja ignorar (como `ProcedimentosRelacionados`). Para declarar intencionalmente que a chave está vazia sem quebrar o Schema, importe `xsd` do Zeep e passe `xsd.Nil`.
+## Dependências Principais
 
-### 4. Renderização de Documentos Internos (Tipo 'G')
-Ao enviar textos via API para documentos gerados internamente, passe **apenas as tags HTML essenciais** (ex: `<p>texto</p>`). Não inclua a estrutura raiz (`<html><body>`), pois o SEI já injeta o texto dentro de um template nativo. Formatações excessivas fazem o visualizador colapsar e forçar o download em vez de renderizar na tela.# populate-homologa-sei
+| Pacote | Uso |
+|---|---|
+| `zeep` | Cliente SOAP para consumo da API do SEI |
+| `requests` | Sessão HTTP customizada (contorno de firewall/SSL) |
+| `python-dotenv` | Carregamento de variáveis de ambiente |
+| `urllib3` | Supressão de avisos SSL |
+
+---
+
+## Observações Importantes
+
+### Contorno de Firewall
+O ambiente de homologação exige que as requisições simulem um User-Agent de navegador. O cliente é configurado com uma sessão `requests` customizada para isso.
+
+### Validação do Zeep
+O Zeep valida os parâmetros contra o WSDL antes de enviar a requisição. Para parâmetros opcionais do tipo lista ou string que o WSDL marca como obrigatórios, usar `xsd.Nil` em vez de `None`.
+
+### Links de Acesso Externo
+Quando a opção "Gerar Links de Acesso Externos" está ativa no cadastro do serviço no SEI, os links retornados pela API apontam para acesso externo — documentos precisam estar assinados para serem visualizados por esses links.
+
+### Comportamento de Download no Homologação
+Documentos gerados via API no ambiente de homologação são servidos com `Content-Disposition: attachment` pelo servidor, causando download ao invés de renderização no visualizador do SEI. Isso é uma configuração do servidor de homologação e **não indica erro no código ou no conteúdo do documento**. O comportamento esperado pode ser verificado pelo link de acesso externo após assinatura do documento.
+
+---
+
+## Referência
+
+- [Documentação oficial SEI Web Services v5.0](./SEI-WebServices-v5_0.pdf)

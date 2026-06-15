@@ -4,6 +4,7 @@ import urllib3
 from dotenv import load_dotenv
 from zeep import Client, Settings, xsd
 from zeep.transports import Transport
+import base64
 
 # Carrega as variáveis do arquivo .env para a memória do script
 load_dotenv()
@@ -30,31 +31,28 @@ settings = Settings(strict=False)
 
 # Inicializa o cliente SOAP com o disfarce e as configurações
 client = Client(wsdl_url, transport=transport, settings=settings)
-
+            
 # Estrutura do Processo
 novo_processo = {
     "IdTipoProcedimento": "100000358",
     "Especificacao": "Teste de Carga e Automação - Réplica de Processo Produtivo",
     "Assuntos": {"items": [{"CodigoEstruturado": "06.10.01.07"}]},
     "Interessados": [
-        {
-            "Sigla": "ATDJ-DIGEPE",
-            "Nome": "Integração Robô API",
-        } 
-    ],
+            {"Sigla": "ATDJ-DIGEPE", "Nome": "Integração Robô API"}
+        ],    
     "Observacao": "Processo populado via script Python utilizando API SOAP",
     "NivelAcesso": "0",
 }
 
-# Base64 exato de: <p>Teste de automação via API.</p>
-texto_limpo_b64 = 'PHA+VGVzdGUgZGUgYXV0b21hw6fDo28gdmlhIEFQSS48L3A+'
+conteudo_html = "<p class=\"Texto_Justificado_Recuo_Primeira_Linha\">Hello World</p>"
+conteudo_b64 = base64.b64encode(conteudo_html.encode("iso-8859-1")).decode("utf-8")
 
+# A estrutura blindada baseada nos seus scripts de referência
 documento_ficticio = {
-    'Tipo': 'G',           # G = Documento Gerado internamente
-    'IdSerie': '290',        # Chutando um ID de série genérico (provavelmente Ofício ou Despacho)
-    'NivelAcesso': '0',    # Público
-    'Conteudo': texto_limpo_b64,
-    # Adicionando o destinatário para preencher o cabeçalho do Ofício!
+    'Tipo': 'G',
+    'IdSerie': '313',
+    'NivelAcesso': '0',   
+    'Conteudo': conteudo_b64,
 }
 
 # Execução
@@ -83,6 +81,11 @@ try:
     print(f"Número Formatado (Visual): {resposta.ProcedimentoFormatado}")
     print(f"ID Interno do Processo (Banco): {resposta.IdProcedimento}")
     print(f"Link Público de Consulta Externa: {resposta.LinkAcesso}")
+
+    for doc in resposta.RetornoInclusaoDocumentos:
+        print(f"  Documento: {doc.DocumentoFormatado}")
+        print(f"  ID Doc: {doc.IdDocumento}")
+        print(f"  Link Doc: {doc.LinkAcesso}")
 
 except Exception as e:
     print(f"Erro na integração SOAP: {e}")
