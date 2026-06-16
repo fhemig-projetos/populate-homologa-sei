@@ -32,23 +32,27 @@ settings = Settings(strict=False)
 # Inicializa o cliente SOAP com o disfarce e as configurações
 client = Client(wsdl_url, transport=transport, settings=settings)
 
+conteudo_html = "<p class=\"Texto_Justificado_Recuo_Primeira_Linha\">Hello World</p>"
+conteudo_b64 = base64.b64encode(conteudo_html.encode()).decode()
 
-proc_info = client.service.consultarProcedimento(
-    SiglaSistema=sigla_sistema,
-    IdentificacaoServico=chave_acesso,
-    IdUnidade=id_unidade_atual,
-    ProtocoloProcedimento='2270.01.0000050/2026-18',  # o ProcedimentoFormatado
-    SinRetornarAssuntos='N',
-    SinRetornarInteressados='N',
-    SinRetornarObservacoes='N',
-    SinRetornarAndamentoGeracao='N',
-    SinRetornarAndamentoConclusao='N',
-    SinRetornarUltimoAndamento='N',
-    SinRetornarUnidadesProcedimentoAberto='N',
-    SinRetornarProcedimentosRelacionados='N',
-    SinRetornarProcedimentosAnexados='N',
+# A estrutura blindada baseada nos seus scripts de referência
+documento_ficticio = {
+    'Tipo': 'G',
+    'ProtocoloProcedimento': "2270.01.0000050/2026-18",
+    'IdSerie': '313',
+    'NivelAcesso': '0',   
+    'Conteudo': conteudo_b64,
+}
+
+resp = client.service.incluirDocumento(        
+        SiglaSistema=sigla_sistema,
+        IdentificacaoServico=chave_acesso,
+        IdUnidade=id_unidade_atual,
+        Documento=documento_ficticio
 )
 
-print(proc_info.LinkAcesso)
-print(proc_info.ProcedimentoFormatado)
-print(proc_info.Especificacao)
+print(f"  Documento: {resp.DocumentoFormatado}")
+print(f"  ID Doc: {resp.IdDocumento}")
+print(f"  Link Doc: {resp.LinkAcesso}")
+
+
