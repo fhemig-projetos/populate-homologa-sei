@@ -65,7 +65,8 @@ A pasta [`docs/`](./docs/) contém a documentação detalhada de cada endpoint t
 | [consultar_procedimento.md](./docs/consultar_procedimento.md) | `consultarProcedimento` | Consulta dados de um processo |
 | [consultar_documento.md](./docs/consultar_documento.md) | `consultarDocumento` | Consulta dados de um documento |
 | [listar_series.md](./docs/listar_series.md) | `listarSeries` | Lista tipos de documento disponíveis |
-
+> Falta fazer documentação do endpoint de incluir documento
+ 
 ---
 
 ## Dependências Principais

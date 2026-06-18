@@ -32,13 +32,31 @@ settings = Settings(strict=False)
 # Inicializa o cliente SOAP com o disfarce e as configurações
 client = Client(wsdl_url, transport=transport, settings=settings)
 
-conteudo_html = "<p class=\"Texto_Justificado_Recuo_Primeira_Linha\">Hello World</p>"
+conteudo_html = """
+<h3 style="text-align: center;">Documento de Teste - Integração API</h3>
+
+<p>Prezados,</p>
+
+<p><strong>Lorem ipsum dolor sit amet</strong>, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+<p><em>Pontos de atenção verificados neste teste:</em></p>
+<ul>
+    <li>Renderização nativa no visualizador web do SEI.</li>
+    <li>Codificação UTF-8 para garantir que a acentuação (ç, ã, á) não force o download.</li>
+    <li>Injeção correta de destinatários no cabeçalho do documento.</li>
+</ul>
+
+<p>Atenciosamente,</p>
+<p><strong>Robô de Automação (ATDJ-DIGEPE)</strong></p>
+"""
 conteudo_b64 = base64.b64encode(conteudo_html.encode()).decode()
 
 # A estrutura blindada baseada nos seus scripts de referência
 documento_ficticio = {
     'Tipo': 'G',
-    'ProtocoloProcedimento': "2270.01.0000050/2026-18",
+    'ProtocoloProcedimento': "2270.01.0000003/2026-26",
     'IdSerie': '313',
     'NivelAcesso': '0',   
     'Conteudo': conteudo_b64,
